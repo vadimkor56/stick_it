@@ -9,7 +9,6 @@ if (!array_key_exists("secure", $_SESSION) || $_SESSION['secure'] == false) {
   exit();
 }
 
-
 $host = "<your_host>";
 $db = "<your_database>";
 $password = "<your_password>";
@@ -46,7 +45,43 @@ if ($_POST) {
     $query = "delete from notes where date='".$del_item."'";
     if (!mysqli_query($link, $query)) {
       echo "Error!!";
-    } 
+    }
+    header("Refresh:0");
+  } else if (array_key_exists('submit-edit', $_POST) && $_POST['submit-edit'] != "") {
+    $edit_item = $_POST['submit-edit'];
+    $edit_heading = "";
+    $edit_note = "";
+    $query = "select * from notes where date = '".mysqli_real_escape_string($link, $edit_item)."'"; 
+    if ($result = mysqli_query($link, $query)) {
+      if ($row = mysqli_fetch_array($result)) {
+        $edit_heading = $row['heading'];
+        $edit_note = $row['note'];
+      }
+      $edit_heading = str_replace("<br />", "", $edit_heading);
+      $edit_note = str_replace("<br />", "", $edit_note);
+      $edit_date = $edit_item;
+    }
+  } else if (array_key_exists('submit-update', $_POST) && $_POST['submit-update'] != "") {
+    $update_item = $_POST['submit-update'];
+    $heading = $_POST["heading"];
+    $note = $_POST["note"];
+    $note = nl2br($note);
+    $filename = basename($_FILES["file"]["name"]);
+    $uploadfile = "";
+    
+    if(file_exists($_FILES['file']['tmp_name'])) {
+      $uploaddir = "uploads/";
+      $uploadfile = $uploaddir.$filename;
+      move_uploaded_file($_FILES['file']['tmp_name'], $uploadfile); 
+    }
+    
+    $query = "update notes set heading='".$heading."', note='".$note."', file_link='".$uploadfile."', filename='".mysqli_real_escape_string($link, $filename)."' where date = '".mysqli_real_escape_string($link, $update_item)."'";
+    if (!mysqli_query($link, $query)) {
+      echo "Error!!";
+    }
+    header("Refresh:0");
+  } else if (array_key_exists('submit-close', $_POST) && $_POST['submit-close'] != "") {
+    header("Refresh:0");
   }
   else {
     $heading = $_POST["heading"];
@@ -67,10 +102,11 @@ if ($_POST) {
     if (!mysqli_query($link, $query)) {
       echo "Error!";
       echo $query;
-    } 
+    }
+    header("Refresh:0");
   }
   
-  header("Refresh:0");
+
 
 }
 
@@ -113,7 +149,7 @@ if ($_POST) {
       .note {
         height: auto;
         min-height: 100px;
-/*        max-width: 45%;*/
+        max-width: 500px;
         width: auto;
         min-width: 100px;
         color: black;
@@ -194,6 +230,12 @@ if ($_POST) {
         right: 0px; 
       }
       
+      .edit-note-btn {
+        position: absolute;
+        top: 0px;
+        left: 0px; 
+      }
+      
       nav {
         max-height: 56px !important;
       }
@@ -204,6 +246,10 @@ if ($_POST) {
       
       .highlight {
         background-color: yellow;
+      }
+      
+      .no-radius {
+        border-radius: 0px !important;
       }
       
       
@@ -221,7 +267,20 @@ if ($_POST) {
         <button id="search-btn" class="btn btn-outline-success d-none d-sm-block"><i class="fas fa-search"></i></button>
       </div>
     </nav>
-    <form action="#" method="post" enctype="multipart/form-data" id="new-note-div" class="container row ">
+    <?php
+    if (array_key_exists('submit-edit', $_POST) && $_POST['submit-edit'] != "") {
+      echo '<form action="#" method="post" enctype="multipart/form-data" id="new-note-div" class="container row ">
+      <input id="new-heading-input" name="heading" type="text" class="col-12 d-block" placeholder="Heading" autocomplete="off" value="'.$edit_heading.'">
+      <textarea id="new-note-input" name="note" rows="4" type="text" class="col-12 no-radius" placeholder="New note" autocomplete="off">'.$edit_note.'</textarea>
+      
+      <input class="new-file-input" type="file" name="file" class="form-control-file col-12 d-block" id="exampleFormControlFile1">
+
+      
+      <button id="new-upload-input" name="submit-update" type="submit" class="col-6 btn btn-outline-success d-block" value="'.$edit_date.'">Update</button>
+      <button id="close-btn" type="submit" name="submit-close" value="1" class="col-6 btn btn-outline-primary d-block">Close</button>
+    </form>';
+    } else {
+      echo '<form action="#" method="post" enctype="multipart/form-data" id="new-note-div" class="container row ">
       <input id="new-heading-input" name="heading" type="text" class="col-12" placeholder="Heading" autocomplete="off">
       <textarea id="new-note-input" name="note" type="text" class="col-12" placeholder="New note" autocomplete="off" required></textarea>
       
@@ -230,13 +289,18 @@ if ($_POST) {
       
       <input id="new-upload-input" type="submit" class="col-6 btn btn-outline-success" value="Upload">
       <button id="close-btn" type="button" class="col-6 btn btn-outline-primary">Close</button>
-    </form>
+    </form>';
+    }
+    ?>
     
     <div id="main-field" class="container">
       <?php 
       for ($i = sizeof($notes) - 1; $i >= 0; $i--) {
         echo 
           '<div class="note drag-shape alert alert-success" data-toggle="tooltip" data-placement="top" title="'.$dates[$i].'">
+            <form method="post" class="edit-note-btn" data-toggle="tooltip" data-placement="right" title="Edit">
+              <button name="submit-edit" value="'.$dates[$i].'" type="submit" class="btn btn-default"><i class="fas fa-edit"></i></button>
+            </form>
             <form method="post" class="delete-note-btn" data-toggle="tooltip" data-placement="right" title="Delete">
               <button name="submit-delete" value="'.$dates[$i].'" type="submit" class="btn btn-default"><i class="far fa-minus-square"></i></button>
             </form>
@@ -275,7 +339,9 @@ if ($_POST) {
       });
       
       $("#close-btn").click(function() {
+        $(".no-radius").removeClass("no-radius");
         $("#new-note-input").css("height", "auto").css("border-radius", "15px");
+        $(".d-block").removeClass("d-block");
         $("#new-heading-input").css("display", "none");
         $(".new-file-input").css("display", "none");
         $("#new-upload-input").css("display", "none");
