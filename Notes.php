@@ -24,6 +24,7 @@ $file_links = array_fill(0, $size, NULL);
 $file_names = array_fill(0, $size, NULL);
 $dates = [];
 $ids = [];
+$colors = [];
 
 $query = "select * from notes where email = '".mysqli_real_escape_string($link, $email)."'"; 
 if ($result = mysqli_query($link, $query)) {
@@ -32,6 +33,7 @@ if ($result = mysqli_query($link, $query)) {
     array_push($notes, $row['note']);
     array_push($dates, $row['date']);
     array_push($ids, $row['id']);
+    array_push($colors, $row['color']);
   }
 }
 
@@ -80,11 +82,13 @@ if ($_POST) {
     $edit_item = $_POST['submit-edit'];
     $edit_heading = "";
     $edit_note = "";
+    $edit_color = "";
     $query = "select * from notes where id = '".mysqli_real_escape_string($link, $edit_item)."'"; 
     if ($result = mysqli_query($link, $query)) {
       if ($row = mysqli_fetch_array($result)) {
         $edit_heading = $row['heading'];
         $edit_note = $row['note'];
+        $edit_color = $row['color'];
       }
       $edit_heading = str_replace("<br />", "", $edit_heading);
       $edit_note = str_replace("<br />", "", $edit_note);
@@ -93,6 +97,11 @@ if ($_POST) {
     $update_item = $_POST['submit-update'];
     $heading = $_POST["heading"];
     $note = $_POST["note"];
+    if (array_key_exists('radio', $_POST) && $_POST['radio'] != "") {
+      $color = $_POST["radio"];
+    } else {
+      $color = $edit_color;
+    }
     $note = nl2br($note);
     $uploadfile = "";
     
@@ -113,7 +122,7 @@ if ($_POST) {
       
     }
     
-    $query = "update notes set heading='".$heading."', note='".$note."' where id = '".mysqli_real_escape_string($link, $update_item)."'";
+    $query = "update notes set heading='".$heading."', note='".$note."', color='".$color."' where id = '".mysqli_real_escape_string($link, $update_item)."'";
       
     if (!mysqli_query($link, $query)) {
         echo "Error!!";
@@ -129,10 +138,15 @@ if ($_POST) {
     $note = $_POST["note"];
     $note = nl2br($note);
     $uploadfile = "";
+    if (array_key_exists('radio', $_POST) && $_POST['radio'] != "") {
+      $color = $_POST["radio"];
+    } else {
+      $color = "aliceblue";
+    }
     
     $date = date('l jS \of F Y h:i:s A');
 
-    $query = "insert into notes (`email`,`heading`, `note`, `date`) values ('".mysqli_real_escape_string($link, $email)."', '".mysqli_real_escape_string($link, $heading)."', '".mysqli_real_escape_string($link, $note)."', '".$date."')";
+    $query = "insert into notes (`email`,`heading`, `note`, `date`, `color`) values ('".mysqli_real_escape_string($link, $email)."', '".mysqli_real_escape_string($link, $heading)."', '".mysqli_real_escape_string($link, $note)."', '".$date."', '".$color."')";
     if (!mysqli_query($link, $query)) {
       echo "Error!";
       echo $query;
@@ -261,7 +275,7 @@ if ($_POST) {
       }
       
       
-      #new-heading-input, .new-file-input, #new-upload-input, #close-btn {
+      #new-heading-input, .new-file-input, .new-color-input, #new-upload-input, #close-btn {
         display: none;
       }
       
@@ -327,6 +341,66 @@ if ($_POST) {
         width: 85% ! important;
       }
       
+      #colors-div {
+        height: 40px;
+        justify-content: center;
+        border: 1px solid #ECD9D7;
+        
+      }
+      
+      #colors-ul {
+        width: 100%;
+        display: inline-flex;
+        justify-content: center;
+        list-style: none;
+      }
+      #colors-ul li {
+          display: inline-block;
+          margin-right: 15px;
+      }
+      #colors-ul li input {
+          visibility:hidden;
+      }
+      #colors-ul li label {
+        cursor: pointer;
+        margin: 2.5px;
+        height: 32px;
+        width: 32px;
+        border-radius: 50%;
+      }
+      
+      #colors-ul li input:checked + label {
+          border: 2px solid #b2aba4;
+      }
+      
+      #radio-red {
+        background-color: #EE8B81;
+      }
+      #radio-orange {
+        background-color: #F7BB33;
+      }
+      #radio-yellow {
+        background-color: #FFF475;
+      }
+      #radio-green {
+        background-color: #C9F690;
+      }
+      #radio-grbl {
+        background-color: #A5FAEA;
+      }
+      #radio-purple {
+        background-color: #AECBFA;
+      }
+      #radio-pink {
+        background-color: #F5CEE8;
+      }
+      #radio-brown {
+        background-color: #E6C9A8;
+      }
+      
+      
+      
+      
     </style>
   </head>
   <body>
@@ -349,6 +423,44 @@ if ($_POST) {
       
       <input class="new-file-input" type="file" name="file[]" class="form-control-file col-12" id="exampleFormControlFile1" multiple="multiple">
       
+      <div id="colors-div" class="col-12 new-color-input">
+        <ul id="colors-ul">
+          <li>
+            <input type="radio" value="#EE8B81" name="radio" id="radio1"/>
+            <label id="radio-red" for="radio1"></label>
+          </li>
+          <li>
+            <input type="radio" value="#F7BB33" name="radio"  id="radio2"/>
+            <label id="radio-orange" for="radio2"></label>
+          </li>
+          <li>
+            <input type="radio" value="#FFF475" name="radio"  id="radio3"/>
+            <label id="radio-yellow" for="radio3"></label>
+          </li>
+          <li>
+            <input type="radio" value="#C9F690" name="radio"  id="radio4"/>
+            <label id="radio-green" for="radio4"></label>
+          </li>
+          <li>
+            <input type="radio" value="#A5FAEA" name="radio"  id="radio5"/>
+            <label id="radio-grbl" for="radio5"></label>
+          </li>
+          <li>
+            <input type="radio" value="#AECBFA" name="radio"  id="radio6"/>
+            <label id="radio-purple" for="radio6"></label>
+          </li>
+          <li>
+            <input type="radio" value="#F5CEE8" name="radio"  id="radio7"/>
+            <label id="radio-pink" for="radio7"></label>
+          </li>
+          <li>
+            <input type="radio" value="#E6C9A8" name="radio"  id="radio8"/>
+            <label id="radio-brown" for="radio8"></label>
+          </li>
+        </ul>
+      
+      </div>
+      
       <button id="new-upload-input" name="submit-update" type="submit" class="col-6 btn btn-outline-success d-block" value="'.$edit_item.'">Update</button>
       <button id="close-btn" type="submit" name="submit-close" value="1" class="col-6 btn btn-outline-primary d-block">Close</button>
     </form>';
@@ -359,6 +471,43 @@ if ($_POST) {
       
       <input class="new-file-input" type="file" name="file[]" class="form-control-file col-12 d-block" id="exampleFormControlFile1" multiple="multiple">
       
+      <div id="colors-div" class="col-12 new-color-input">
+        <ul id="colors-ul">
+          <li>
+            <input type="radio" value="#EE8B81" name="radio" id="radio1"/>
+            <label id="radio-red" for="radio1"></label>
+          </li>
+          <li>
+            <input type="radio" value="#F7BB33" name="radio"  id="radio2"/>
+            <label id="radio-orange" for="radio2"></label>
+          </li>
+          <li>
+            <input type="radio" value="#FFF475" name="radio"  id="radio3"/>
+            <label id="radio-yellow" for="radio3"></label>
+          </li>
+          <li>
+            <input type="radio" value="#C9F690" name="radio"  id="radio4"/>
+            <label id="radio-green" for="radio4"></label>
+          </li>
+          <li>
+            <input type="radio" value="#A5FAEA" name="radio"  id="radio5"/>
+            <label id="radio-grbl" for="radio5"></label>
+          </li>
+          <li>
+            <input type="radio" value="#AECBFA" name="radio"  id="radio6"/>
+            <label id="radio-purple" for="radio6"></label>
+          </li>
+          <li>
+            <input type="radio" value="#F5CEE8" name="radio"  id="radio7"/>
+            <label id="radio-pink" for="radio7"></label>
+          </li>
+          <li>
+            <input type="radio" value="#E6C9A8" name="radio"  id="radio8"/>
+            <label id="radio-brown" for="radio8"></label>
+          </li>
+        </ul>
+      
+      </div>
       
       <input id="new-upload-input" type="submit" class="col-6 btn btn-outline-success" value="Upload">
       <button id="close-btn" type="button" class="col-6 btn btn-outline-primary">Close</button>
@@ -369,9 +518,14 @@ if ($_POST) {
     <div id="main-field" class="container">
       <?php 
       for ($i = sizeof($notes) - 1; $i >= 0; $i--) {
+        if ($colors[$i]) {
+          echo '<div style="background-color:'.$colors[$i].'" class="note drag-shape alert alert-success" data-toggle="tooltip" data-placement="top" title="'.$dates[$i].'">';
+        } else {
+          echo 
+          '<div class="note drag-shape alert alert-success" data-toggle="tooltip" data-placement="top" title="'.$dates[$i].'">';
+        }
         echo 
-          '<div class="note drag-shape alert alert-success" data-toggle="tooltip" data-placement="top" title="'.$dates[$i].'">
-            <form method="post" class="edit-note-btn" data-toggle="tooltip" data-placement="right" title="Edit">
+            '<form method="post" class="edit-note-btn" data-toggle="tooltip" data-placement="right" title="Edit">
               <button name="submit-edit" value="'.$ids[$i].'" type="submit" class="btn btn-default"><i class="fas fa-edit"></i></button>
             </form>
             <form method="post" class="delete-note-btn" data-toggle="tooltip" data-placement="right" title="Delete">
@@ -416,6 +570,7 @@ if ($_POST) {
         $(".new-file-input").css("display", "block");
         $("#new-upload-input").css("display", "block");
         $("#close-btn").css("display", "block");
+        $('.new-color-input').css("display", "block");
       });
       
       $("#close-btn").click(function() {
@@ -426,6 +581,7 @@ if ($_POST) {
         $(".new-file-input").css("display", "none");
         $("#new-upload-input").css("display", "none");
         $("#close-btn").css("display", "none");
+        $('.new-color-input').css("display", "none");
         
         $("#new-note-input").val(null);
         $("#new-heading-input").val(null);
@@ -441,14 +597,6 @@ if ($_POST) {
       $(function() {
         $( ".drag-shape" ).draggable({ containment: "parent" });
       });
-      
-//      $(".edit-note-btn").click(function() {
-//        $("#new-note-input").css("height", "100px").css("border-radius", "0px");
-//        $("#new-heading-input").css("display", "block");
-//        $(".new-file-input").css("display", "block");
-//        $("#new-upload-input").css("display", "block");
-//        $("#close-btn").css("display", "block");
-//      });
       
       function highlight(text) {
         var inputTexts = document.getElementsByClassName("note");
